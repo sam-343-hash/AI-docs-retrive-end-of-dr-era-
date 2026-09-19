@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedRetrieve — Clinical Evidence Retrieval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #14213D;
+    --ink-soft: #3A4664;
+    --paper: #FAFAF7;
+    --paper-dim: #F0EFE8;
+    --teal: #3F6F63;
+    --teal-soft: #E4EEEA;
+    --amber: #B5732E;
+    --amber-soft: #F5E7D6;
+    --line: #D9D6CB;
+    --line-strong: #B7B3A5;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+    --mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ink: #ECE9DF;
+      --ink-soft: #B9B6AC;
+      --paper: #14171C;
+      --paper-dim: #1B1F26;
+      --teal: #7FBBA9;
+      --teal-soft: #1E2B28;
+      --amber: #E0A867;
+      --amber-soft: #2C2419;
+      --line: #333A44;
+      --line-strong: #4A5260;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ECE9DF;
+    --ink-soft: #B9B6AC;
+    --paper: #14171C;
+    --paper-dim: #1B1F26;
+    --teal: #7FBBA9;
+    --teal-soft: #1E2B28;
+    --amber: #E0A867;
+    --amber-soft: #2C2419;
+    --line: #333A44;
+    --line-strong: #4A5260;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 28px 100px; }
+
+  /* header */
+  header { border-bottom: 1px solid var(--line); padding: 28px 0 22px; }
+  .masthead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand-mark { font-family: var(--mono); font-size: 13px; color: var(--teal); border: 1px solid var(--teal); border-radius: 3px; padding: 2px 6px; letter-spacing: 0.02em; }
+  .brand-name { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+  .meta-line { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+
+  /* hero / search */
+  .hero { padding: 46px 0 30px; border-bottom: 1px solid var(--line); }
+  .hero h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; max-width: 620px; margin: 0 0 14px; }
+  .hero p.sub { color: var(--ink-soft); max-width: 560px; line-height: 1.55; margin: 0 0 30px; font-size: 15px; }
+
+  .search-box { display: flex; gap: 10px; border: 1.5px solid var(--ink); border-radius: 4px; padding: 4px; background: var(--paper); }
+  .search-box input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--sans); font-size: 16px; padding: 12px 12px; color: var(--ink); }
+  .search-box input::placeholder { color: var(--line-strong); }
+  .search-box button { border: none; background: var(--ink); color: var(--paper); font-family: var(--sans); font-weight: 500; font-size: 14px; padding: 0 22px; border-radius: 3px; cursor: pointer; }
+  .search-box button:hover { background: var(--teal); }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .chip { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 20px; padding: 6px 12px; cursor: pointer; background: transparent; }
+  .chip:hover { border-color: var(--teal); color: var(--teal); }
+
+  .filters { display: flex; gap: 6px; margin-top: 22px; }
+  .filter-btn { font-family: var(--sans); font-size: 13px; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); padding: 7px 14px; border-radius: 3px; cursor: pointer; }
+  .filter-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* results */
+  .results-head { display: flex; justify-content: space-between; align-items: baseline; padding: 24px 0 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .results { display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
+
+  .record { border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: 3px; padding: 18px 20px; background: var(--paper-dim); }
+  .record.low-conf { border-left-color: var(--line-strong); }
+  .record-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .record-index { font-family: var(--mono); font-size: 12px; color: var(--teal); margin-right: 10px; }
+  .record-title { font-family: var(--serif); font-size: 19px; font-weight: 600; line-height: 1.3; }
+  .record-source { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); margin-top: 5px; }
+  .record-tag { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 3px; white-space: nowrap; }
+  .tag-guideline { background: var(--teal-soft); color: var(--teal); }
+  .tag-drug { background: var(--amber-soft); color: var(--amber); }
+  .tag-research { background: var(--line); color: var(--ink-soft); }
+
+  .record-snippet { margin-top: 12px; line-height: 1.6; font-size: 14.5px; color: var(--ink); }
+  .record-snippet mark { background: var(--amber-soft); color: var(--ink); padding: 0 2px; border-radius: 2px; }
+
+  .relevance { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .relevance-track { flex: 1; max-width: 160px; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .relevance-fill { height: 100%; background: var(--teal); }
+  .relevance-label { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+
+  .empty { padding: 60px 0; text-align: center; color: var(--ink-soft); font-family: var(--mono); font-size: 13px; }
+
+  /* pipeline explainer */
+  .pipeline { margin-top: 50px; padding-top: 36px; border-top: 1px solid var(--line); }
+  .pipeline h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  .pipeline p.lead { color: var(--ink-soft); font-size: 14px; max-width: 560px; line-height: 1.55; margin: 0 0 26px; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .step { background: var(--paper); padding: 18px 16px; }
+  .step-n { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+  .step-t { font-family: var(--sans); font-weight: 600; font-size: 14px; margin: 8px 0 6px; }
+  .step-d { font-size: 12.5px; color: var(--ink-soft); line-height: 1.5; }
+  @media (max-width: 720px) { .steps { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+
+  .disclaimer { margin-top: 40px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper-dim); font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  .disclaimer strong { color: var(--ink); }
+
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="masthead">
+      <div class="brand">
+        <span class="brand-mark">Rx</span>
+        <span class="brand-name">MedRetrieve</span>
+      </div>
+      <span class="meta-line">Clinical evidence search — demo corpus, 12 sources</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Find the source behind the answer, not just an answer.</h1>
+    <p class="sub">Search across clinical guidelines, drug monographs, and research abstracts. Every result is a real source in the corpus below, ranked by how closely it matches your question — nothing is generated or paraphrased.</p>
+
+    <div class="search-box">
+      <input id="queryInput" type="text" placeholder="e.g. first-line treatment for stage 1 hypertension" autocomplete="off">
+      <button onclick="runSearch()">Search</button>
+    </div>
+    <div class="chips">
+      <button class="chip" onclick="setQuery('warfarin dosing with renal impairment')">warfarin dosing with renal impairment</button>
+      <button class="chip" onclick="setQuery('sepsis fluid resuscitation targets')">sepsis fluid resuscitation targets</button>
+      <button class="chip" onclick="setQuery('pediatric fever workup under 3 months')">pediatric fever under 3 months</button>
+      <button class="chip" onclick="setQuery('metformin contraindications')">metformin contraindications</button>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-f="all">All sources</button>
+      <button class="filter-btn" data-f="guideline">Guidelines</button>
+      <button class="filter-btn" data-f="drug">Drug monographs</button>
+      <button class="filter-btn" data-f="research">Research</button>
+    </div>
+  </section>
+
+  <section class="results-head">
+    <span id="resultsCount">12 sources indexed — enter a question above</span>
+    <span id="resultsFilter">FILTER: ALL</span>
+  </section>
+
+  <section class="results" id="results"></section>
+
+  <section class="pipeline">
+    <h2>How a search turns into a ranked result</h2>
+    <p class="lead">This demo uses term-overlap scoring so the mechanics stay visible. A production system swaps step 2 and 3 for vector embeddings and a vector database, but the shape of the pipeline is the same.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-t">Question in</div>
+        <div class="step-d">The clinician's question is parsed into its clinically meaningful terms.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-t">Match against corpus</div>
+        <div class="step-d">Each source's title, tags, and body are scored against those terms.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-t">Rank by relevance</div>
+        <div class="step-d">Sources are ordered by match strength, not publish date or popularity.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-t">Cite, don't summarize</div>
+        <div class="step-d">The original passage is shown with matched terms highlighted, so the clinician reads the source itself.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="disclaimer">
+    <strong>Demonstration only.</strong> This tool runs on a small fixed sample corpus and simple keyword matching — it is not connected to a real medical database, is not validated for clinical use, and must not inform patient care. A production system would need a licensed clinical corpus, a vetted retrieval model, and review by clinical and regulatory teams before any real-world use.
+  </div>
+
+  <footer>MedRetrieve — prototype interface · sample corpus for illustration only</footer>
+</div>
+
+<script>
+const corpus = [
+  { title: "Hypertension: First-Line Pharmacologic Therapy", source: "Clinical Practice Guideline, Cardiology Consortium, 2023", type: "guideline",
+    text: "For stage 1 hypertension without compelling comorbid indications, initial therapy should be a thiazide-type diuretic, a long-acting calcium channel blocker, or an ACE inhibitor or ARB. Lifestyle modification is recommended concurrently. Blood pressure should be reassessed within four weeks of initiation.",
+    keywords: ["hypertension","blood pressure","thiazide","diuretic","calcium channel blocker","ace inhibitor","arb","stage 1","first-line","treatment"] },
+
+  { title: "Warfarin Dosing in Renal Impairment", source: "Drug Monograph, National Formulary, 2024", type: "drug",
+    text: "Warfarin is not renally cleared, but patients with chronic kidney disease show increased sensitivity and bleeding risk due to altered vitamin K metabolism and platelet function. Initiate at a lower starting dose and monitor INR more frequently in patients with eGFR below 30 mL/min.",
+    keywords: ["warfarin","renal impairment","kidney disease","dosing","inr","bleeding risk","egfr","anticoagulation"] },
+
+  { title: "Early Fluid Resuscitation Targets in Sepsis", source: "Surviving Sepsis Campaign, International Guidelines, 2021", type: "guideline",
+    text: "In patients with sepsis-induced hypoperfusion, at least 30 mL/kg of intravenous crystalloid fluid should be given within the first three hours. Dynamic measures such as passive leg raise or stroke volume variation should guide further fluid administration rather than fixed protocols alone.",
+    keywords: ["sepsis","fluid resuscitation","crystalloid","hypoperfusion","targets","resuscitation","iv fluids"] },
+
+  { title: "Fever Without Source in Infants Under 3 Months", source: "Pediatric Clinical Pathway, Children's Hospital Network, 2022", type: "guideline",
+    text: "Infants younger than 90 days with a rectal temperature of 38.0°C or higher require a full sepsis evaluation, including blood culture, urinalysis with culture, and consideration of lumbar puncture, given the higher risk of serious bacterial infection in this age group.",
+    keywords: ["fever","infant","pediatric","under 3 months","sepsis evaluation","workup","serious bacterial infection"] },
+
+  { title: "Metformin: Contraindications and Renal Dosing Thresholds", source: "Drug Monograph, National Formulary, 2024", type: "drug",
+    text: "Metformin is contraindicated in patients with an eGFR below 30 mL/min/1.73m2 due to the risk of lactic acidosis. Dose reduction should be considered when eGFR falls between 30 and 45. Metformin should be temporarily withheld before iodinated contrast procedures in patients with reduced renal function.",
+    keywords: ["metformin","contraindications","renal dosing","egfr","lactic acidosis","diabetes","contrast"] },
+
+  { title: "Statin Therapy for Primary Prevention of Cardiovascular Disease", source: "Journal of Preventive Cardiology, 2023", type: "research",
+    text: "A meta-analysis of 21 randomized trials found that statin therapy reduced major cardiovascular events by approximately 21% per 1 mmol/L reduction in LDL cholesterol among patients without prior cardiovascular disease, with benefit observed across all baseline risk strata.",
+    keywords: ["statin","cardiovascular disease","primary prevention","ldl","cholesterol","meta-analysis"] },
+
+  { title: "Type 2 Diabetes: Glycemic Targets in Older Adults", source: "Clinical Practice Guideline, Endocrine Society, 2022", type: "guideline",
+    text: "For older adults with multiple comorbidities and limited life expectancy, a less stringent HbA1c target of 8.0 to 8.5% is reasonable to avoid hypoglycemia. Healthier older adults with few comorbidities should be managed toward standard targets of below 7.5%.",
+    keywords: ["diabetes","glycemic targets","hba1c","older adults","hypoglycemia","type 2"] },
+
+  { title: "Penicillin Allergy: Risk Stratification Before Avoidance", source: "Drug Monograph, National Formulary, 2024", type: "drug",
+    text: "Fewer than 10% of patients who report a penicillin allergy are truly allergic when formally tested. Low-risk histories, such as isolated childhood rash without anaphylaxis, generally do not require skin testing before a supervised oral challenge or direct use of first-line penicillins.",
+    keywords: ["penicillin","allergy","risk stratification","skin testing","antibiotics","oral challenge"] },
+
+  { title: "Direct Oral Anticoagulants versus Warfarin in Atrial Fibrillation", source: "New England Journal of Clinical Research, 2022", type: "research",
+    text: "Across pooled trial data, direct oral anticoagulants were associated with a lower rate of intracranial hemorrhage than warfarin, with similar or modestly lower rates of ischemic stroke, though gastrointestinal bleeding was higher with some agents.",
+    keywords: ["direct oral anticoagulants","doac","warfarin","atrial fibrillation","stroke","bleeding","anticoagulation"] },
+
+  { title: "Community-Acquired Pneumonia: Empiric Antibiotic Selection", source: "Clinical Practice Guideline, Respiratory Society, 2023", type: "guideline",
+    text: "For previously healthy outpatients with community-acquired pneumonia and no comorbidities, amoxicillin is the preferred empiric agent. Patients with comorbidities or recent antibiotic exposure should receive combination therapy with a beta-lactam plus a macrolide, or monotherapy with a respiratory fluoroquinolone.",
+    keywords: ["pneumonia","antibiotic","empiric","amoxicillin","macrolide","community-acquired","respiratory"] },
+
+  { title: "Iron Deficiency Anemia: Oral versus Intravenous Repletion", source: "Journal of Hematology Practice, 2023", type: "research",
+    text: "In patients with inflammatory bowel disease and iron deficiency anemia, intravenous iron repletion achieved faster hemoglobin normalization and better tolerability than oral iron, which was frequently limited by gastrointestinal side effects and malabsorption during active inflammation.",
+    keywords: ["iron deficiency","anemia","oral iron","intravenous iron","hemoglobin","repletion"] },
+
+  { title: "Opioid Tapering in Chronic Non-Cancer Pain", source: "Clinical Practice Guideline, Pain Management Alliance, 2022", type: "guideline",
+    text: "When tapering is indicated, a gradual reduction of 5 to 10% of the original dose every two to four weeks is generally better tolerated than rapid discontinuation. Tapering should be individualized and paused or slowed if withdrawal symptoms or uncontrolled pain emerge.",
+    keywords: ["opioid","tapering","chronic pain","withdrawal","dose reduction"] }
+];
+
+let activeFilter = "all";
+
+function setQuery(q){
+  document.getElementById('queryInput').value = q;
+  runSearch();
+}
+
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function highlight(text, terms){
+  let out = text;
+  const sorted = [...terms].sort((a,b)=>b.length-a.length);
+  sorted.forEach(t=>{
+    if(t.length < 3) return;
+    const re = new RegExp('\\b('+escapeRegExp(t)+')\\b', 'gi');
+    out = out.replace(re, '<mark>$1</mark>');
+  });
+  return out;
+}
+
+function score(doc, terms){
+  let s = 0;
+  const hay = (doc.title + ' ' + doc.text + ' ' + doc.keywords.join(' ')).toLowerCase();
+  terms.forEach(t=>{
+    if(t.length < 3) return;
+    const re = new RegExp('\\b'+escapeRegExp(t)+'\\b', 'gi');
+    const matches = hay.match(re);
+    let weight = 1;
+    if(doc.keywords.some(k=>k.toLowerCase() === t)) weight = 3;
+    else if(doc.title.toLowerCase().includes(t)) weight = 2;
+    if(matches) s += matches.length * weight;
+  });
+  return s;
+}
+
+function runSearch(){
+  const raw = document.getElementById('queryInput').value.trim();
+  const resultsEl = document.getElementById('results');
+  const countEl = document.getElementById('resultsCount');
+
+  if(!raw){
+    resultsEl.innerHTML = '<div class="empty">Enter a clinical question above, or choose one of the sample queries.</div>';
+    countEl.textContent = '12 sources indexed — enter a question above';
+    return;
+  }
+
+  const stop = new Set(['the','a','an','of','in','for','and','or','with','to','is','are','what','how','does','do','on','vs','versus']);
+  const terms = raw.toLowerCase().split(/\W+/).filter(t=>t && !stop.has(t));
+
+  let pool = corpus;
+  if(activeFilter !== 'all') pool = pool.filter(d=>d.type === activeFilter);
+
+  const scored = pool.map(d=>({doc:d, s: score(d, terms)}))
+    .filter(r=>r.s > 0)
+    .sort((a,b)=>b.s - a.s);
+
+  if(scored.length === 0){
+    resultsEl.innerHTML = '<div class="empty">No matching sources in this demo corpus. Try one of the sample queries above.</div>';
+    countEl.textContent = '0 results for "' + raw + '"';
+    return;
+  }
+
+  const maxScore = scored[0].s;
+  countEl.textContent = scored.length + ' result' + (scored.length>1?'s':'') + ' for "' + raw + '"';
+
+  resultsEl.innerHTML = scored.map((r, i)=>{
+    const pct = Math.max(18, Math.round((r.s / maxScore) * 100));
+    const tagClass = r.doc.type === 'guideline' ? 'tag-guideline' : r.doc.type === 'drug' ? 'tag-drug' : 'tag-research';
+    const tagLabel = r.doc.type === 'guideline' ? 'Guideline' : r.doc.type === 'drug' ? 'Drug monograph' : 'Research';
+    const snippet = highlight(r.doc.text, terms);
+    return `<div class="record ${pct < 40 ? 'low-conf' : ''}">
+      <div class="record-top">
+        <div>
+          <span class="record-index">${String(i+1).padStart(2,'0')}</span><span class="record-title">${r.doc.title}</span>
+          <div class="record-source">${r.doc.source}</div>
+        </div>
+        <span class="record-tag ${tagClass}">${tagLabel}</span>
+      </div>
+      <div class="record-snippet">${snippet}</div>
+      <div class="relevance">
+        <div class="relevance-track"><div class="relevance-fill" style="width:${pct}%"></div></div>
+        <span class="relevance-label">relevance ${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('filters').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.filter-btn');
+  if(!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = btn.dataset.f;
+  document.getElementById('resultsFilter').textContent = 'FILTER: ' + btn.textContent.toUpperCase();
+  if(document.getElementById('queryInput').value.trim()) runSearch();
+});
+
+document.getElementById('queryInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') runSearch();
+});
+
+document.getElementById('results').innerHTML = '<div class="empty">Enter a clinical question above, or choose one of the sample queries.</div>';
+</script>
+</body>
+</html>
